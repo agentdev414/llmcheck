@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const comparisonTable = document.getElementById('comparison-table');
 
     // SupabaseのURLとAPIキー
-    const supabaseUrl = '${{ secrets.SUPABASE_URL }}';
-    const supabaseKey = '${{ secrets.SUPABASE_KEY }}';
+    const supabaseUrl = '${{ secrets.SUPABASE_URL }}' || 'https://yzagxfztfehptcgjfilc.supabase.co'; // ローカルテスト用
+    const supabaseKey = '${{ secrets.SUPABASE_KEY }}' || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6YWd4Znp0ZmVocHRjZ2pmaWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0MTI4NDEsImV4cCI6MjA1Njk4ODg0MX0.XOixQrxk82xnlYqz24SCP38LXAe1JxT7Opzl00s1fbA'; // ローカルテスト用
 
     // Supabaseクライアントの初期化
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
