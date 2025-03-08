@@ -1,42 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
     const comparisonTable = document.getElementById('comparison-table');
 
-    // LLMデータの定義
-    const llmData = [
-        { name: 'GPT-4', accuracy: 95, speed: '高速', cost: '高' },
-        { name: 'Claude 3 Opus', accuracy: 96, speed: '高速', cost: '高' },
-        { name: 'Gemini 1.5 Pro', accuracy: 94, speed: '中速', cost: '中' },
-        { name: 'GPT-3.5', accuracy: 90, speed: '高速', cost: '低' }
-    ];
+    // SupabaseのURLとAPIキー
+    const supabaseUrl = '${{ secrets.SUPABASE_URL }}';
+    const supabaseKey = '${{ secrets.SUPABASE_KEY }}';
 
-    // テーブルの作成
-    const table = document.createElement('table');
-    table.innerHTML = `
-        <thead>
-            <tr>
-                <th>モデル</th>
-                <th>精度 (%)</th>
-                <th>速度</th>
-                <th>コスト</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    `;
+    // Supabaseクライアントの初期化
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    const tbody = table.querySelector('tbody');
+    // Supabaseからデータを取得
+    async function getRankingData() {
+        const { data, error } = await supabase
+            .from('llm_ranking') // テーブル名を指定
+            .select('*'); // 取得するカラムを指定
 
-    // LLMデータを行に追加
-    llmData.forEach(model => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${model.name}</td>
-            <td>${model.accuracy}</td>
-            <td>${model.speed}</td>
-            <td>${model.cost}</td>
-        `;
-        tbody.appendChild(row);
-    });
+        if (error) {
+            console.error('Error fetching data from Supabase:', error);
+            comparisonTable.innerHTML = '<p>データの取得に失敗しました。</p>';
+        } else {
+            // グラフの作成
+            const chartData = {
+                labels: data.map(item => item.model_name),
+                datasets: [{
+                    label: '精度 (%)',
+                    data: data.map(item => item.accuracy),
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            };
 
-    // テーブルをDOMに追加
-    comparisonTable.appendChild(table);
+            const chartConfig = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            };
+
+            // グラフを表示するCanvas要素を作成
+            const chartCanvas = document.createElement('canvas');
+            comparisonTable.appendChild(chartCanvas);
+
+            // Chart.jsを使用してグラフを作成
+            const chart = new Chart(chartCanvas, chartConfig);
+        }
+    }
+
+    // データの取得とグラフの表示
+    getRankingData();
 });
