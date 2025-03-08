@@ -1,0 +1,32 @@
+name: Update LLM Ranking
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 毎日0時に実行
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          pip install requests
+      - name: Get LLM ranking data
+        run: |
+          python get_llm_ranking.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "openhands@all-hands.dev"
+          git config --global user.name "openhands"
+          git add data.json
+          git commit -m "Update LLM ranking data" || echo "No changes to commit"
+          git push origin main
