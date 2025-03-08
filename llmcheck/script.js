@@ -1,45 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
     const comparisonTable = document.getElementById('comparison-table');
 
-    // ランキングサイトのAPI URL
-    const apiUrl = 'https://example.com/api/llm_ranking?callback=displayRanking'; // 実際にはAPIが存在しないため、エラーが発生します
+    // SupabaseのURLとAPIキー
+    const supabaseUrl = '${{ secrets.SUPABASE_URL }}';
+    const supabaseKey = '${{ secrets.SUPABASE_KEY }}';
 
-    // JSONPでデータを取得
-    const script = document.createElement('script');
-    script.src = apiUrl;
-    document.body.appendChild(script);
+    // Supabaseクライアントの初期化
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // コールバック関数
-    window.displayRanking = (data) => {
-        // テーブルの作成
-        const table = document.createElement('table');
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>モデル</th>
-                    <th>精度 (%)</th>
-                    <th>速度</th>
-                    <th>コスト</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        `;
+    // Supabaseからデータを取得
+    async function getRankingData() {
+        const { data, error } = await supabase
+            .from('llm_ranking') // テーブル名を指定
+            .select('*'); // 取得するカラムを指定
 
-        const tbody = table.querySelector('tbody');
+        if (error) {
+            console.error('Error fetching data from Supabase:', error);
+            comparisonTable.innerHTML = '<p>データの取得に失敗しました。</p>';
+        } else {
+            // グラフの作成
+            const chartData = {
+                labels: data.map(item => item.model_name),
+                datasets: [{
+                    label: '精度 (%)',
+                    data: data.map(item => item.accuracy),
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            };
 
-        // LLMデータを行に追加
-        data.forEach(model => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${model.name}</td>
-                <td>${model.accuracy}</td>
-                <td>${model.speed}</td>
-                <td>${model.cost}</td>
-            `;
-            tbody.appendChild(row);
-        });
+            const chartConfig = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            };
 
-        // テーブルをDOMに追加
-        comparisonTable.appendChild(table);
-    };
+            // グラフを表示するCanvas要素を作成
+            const chartCanvas = document.createElement('canvas');
+            comparisonTable.appendChild(chartCanvas);
+
+            // Chart.jsを使用してグラフを作成
+            const chart = new Chart(chartCanvas, chartConfig);
+        }
+    }
+
+    // データの取得とグラフの表示
+    getRankingData();
 });
